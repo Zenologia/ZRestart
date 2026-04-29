@@ -1,0 +1,67 @@
+prefix: "<gray>[<red>ZRestart</red>]</gray> "
+
+commands:
+  no-permission: "{prefix}<red>You do not have permission: {permission}</red>"
+  invalid-usage: "{prefix}<red>Usage: {command}</red>"
+  unknown-subcommand: "{prefix}<red>Unknown subcommand.</red>"
+
+help:
+  - "{prefix}<gray>ZRestart commands:</gray>"
+  - "<red>/zrestart time</red> <gray>- Show restart time.</gray>"
+  - "<red>/zrestart now <interval> [reason]</red>"
+  - "<red>/zrestart delay <interval></red>"
+  - "<red>/zrestart stop</red>"
+  - "<red>/zrestart reload</red>"
+
+time:
+  no-restart-scheduled: "{prefix}<yellow>No restart is currently scheduled.</yellow>"
+  next-restart: "{prefix}<gray>Next restart: <red>{time_formatted}</red> at <red>{restart_day} {restart_time}</red> ({timezone}). Reason: <red>{reason}</red></gray>"
+  active-countdown: "{prefix}<gray>Restarting in <red>{time_formatted}</red>. Reason: <red>{reason}</red></gray>"
+
+now:
+  started: "{prefix}<gray>Manual restart countdown started for <red>{time_formatted}</red>. Reason: <red>{reason}</red></gray>"
+  invalid-interval: "{prefix}<red>Invalid interval: {error}</red>"
+
+delay:
+  delayed: "{prefix}<gray>Restart delayed by <red>{time_formatted}</red>.</gray>"
+  no-active-countdown: "{prefix}<red>There is no active restart countdown to delay.</red>"
+  invalid-interval: "{prefix}<red>Invalid interval: {error}</red>"
+
+stop:
+  cancelled: "{prefix}<gray>The active restart countdown has been cancelled.</gray>"
+  no-active-countdown: "{prefix}<red>There is no active restart countdown to cancel.</red>"
+
+reload:
+  success: "{prefix}<green>ZRestart configuration reloaded.</green>"
+  failure: "{prefix}<red>ZRestart reload failed: {error}</red>"
+  kept-old-config: "{prefix}<red>Reload failed. The previous valid configuration is still active: {error}</red>"
+
+countdown:
+  chat: "{prefix}<gray>Server restart in <red>{time_formatted}</red>. Reason: <red>{reason}</red></gray>"
+  title: "<red>Server Restart</red>"
+  subtitle: "<gray>Restarting in <red>{time_formatted}</red></gray>"
+  boss-bar: "Server restart in {time_formatted}"
+
+restart:
+  executing-console: "{prefix}Restart countdown reached zero. Saving data and calling Bukkit.restart()."
+  executing-broadcast: "{prefix}<red>Server is restarting now.</red>"
+  pre-command-failed: "{prefix}<red>Pre-restart command failed: {command}. Error: {error}</red>"
+  pre-command-aborted: "{prefix}<red>Restart aborted because a pre-restart command failed: {command}</red>"
+
+console:
+  loaded: "{prefix}ZRestart enabled. Next restart: {restart_day} {restart_time} ({timezone})."
+  loaded-no-schedule: "{prefix}ZRestart enabled. No valid restart is currently scheduled."
+  disabled: "{prefix}ZRestart disabled."
+  no-valid-schedules: "{prefix}No valid restart schedule entries were found."
+  invalid-schedule-entry: "{prefix}Skipping invalid schedule entry '{entry}': {error}"
+  invalid-warning-time: "{prefix}Skipping invalid warning time '{entry}': {error}"
+  invalid-timezone: "{prefix}Invalid timezone '{entry}'. Falling back to {timezone}."
+  dst-adjustment: "{prefix}Scheduled restart time '{entry}' was adjusted for daylight saving time: {error}"
+  invalid-boss-bar-color: "{prefix}Invalid boss bar color '{entry}'. Falling back to {error}."
+  invalid-boss-bar-overlay: "{prefix}Invalid boss bar overlay '{entry}'. Falling back to {error}."
+  invalid-pre-command-behavior: "{prefix}Invalid pre-restart failure behavior '{entry}'. Falling back to {error}."
+  restart-script-missing: "{prefix}Could not verify a restart script. Bukkit.restart() may stop the server instead of restarting it."
+  restart-script-not-found: "{prefix}Configured restart script was not found: {entry}"
+  reload-kept-old-config: "{prefix}Reload failed. The previous valid configuration remains active: {error}"
+  papi-hooked: "{prefix}PlaceholderAPI found. Placeholder support enabled."
+  papi-missing: "{prefix}PlaceholderAPI not found. Internal placeholders only."

@@ -1,0 +1,62 @@
+# ZRestart configuration
+
+settings:
+  timezone: "America/New_York"
+# See admin README for full list of valid time zones 
+
+  fallback-timezone: "UTC"
+  check-restart-script: true
+  papi-placeholders: true
+
+schedule:
+  enabled: true
+  entries:
+    - "Daily;05;00;Daily maintenance"
+    - "Monday;11;00;Weekly maintenance"
+    - "Friday;22;00"
+
+countdown:
+  warning-times:
+    - 30m
+    - 15m
+    - 5m
+    - 1m
+    - 30s
+    - 5s
+    - 4s
+    - 3s
+    - 2s
+    - 1s
+
+  chat:
+    enabled: true
+
+  title:
+    enabled: false
+    fade-in: 10
+    stay: 40
+    fade-out: 10
+
+  boss-bar:
+    enabled: false
+    color: RED
+    overlay: PROGRESS
+    show-from: 5m
+    progress: true
+
+formatting:
+  minimessage: true
+  legacy-ampersand-colors: true
+  empty-reason: "No reason provided"
+  time-format:
+    include-days: true
+    include-hours: true
+    include-minutes: true
+    include-seconds: true
+    compact: false
+
+pre-restart-commands:
+  enabled: false
+  failure-behavior: CONTINUE # Options are CONTINUE or ABORT
+  commands:
+    - "save-all"

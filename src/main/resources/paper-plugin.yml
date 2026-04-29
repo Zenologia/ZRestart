@@ -1,0 +1,26 @@
+name: ZRestart
+version: 1.0.0
+main: dev.zenologia.zrestart.ZRestartPlugin
+bootstrapper: dev.zenologia.zrestart.ZRestartBootstrap
+description: Simple automatic restart scheduler and countdown plugin for Paper 26.x.
+authors:
+  - Zenologia
+api-version: '26.1.2'
+
+dependencies:
+  server:
+    PlaceholderAPI:
+      load: BEFORE
+      required: false
+      join-classpath: true
+
+permissions:
+  zrestart.time:
+    description: Allows use of /zrestart and /zrestart time.
+    default: true
+  zrestart.admin:
+    description: Allows admin restart actions except reload.
+    default: op
+  zrestart.reload:
+    description: Allows config and message reload.
+    default: op
