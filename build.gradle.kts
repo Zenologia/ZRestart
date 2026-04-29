@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "dev.zenologia"
-version = "1.0.0"
+version = "1.1"
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
@@ -11,6 +11,7 @@ dependencies {
 
     testImplementation(platform("org.junit:junit-bom:6.0.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("io.papermc.paper:paper-api:26.1.2.build.+")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 

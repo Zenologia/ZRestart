@@ -1,5 +1,5 @@
 name: ZRestart
-version: 1.0.0
+version: 1.1
 main: dev.zenologia.zrestart.ZRestartPlugin
 bootstrapper: dev.zenologia.zrestart.ZRestartBootstrap
 description: Simple automatic restart scheduler and countdown plugin for Paper 26.x.

@@ -1,9 +1,9 @@
 # ZRestart configuration
+config-version: 1
 
 settings:
+  # See the admin README at https://github.com/Zenologia/ZRestart for valid timezones.
   timezone: "America/New_York"
-# See admin README for full list of valid time zones 
-
   fallback-timezone: "UTC"
   check-restart-script: true
   papi-placeholders: true
@@ -39,9 +39,12 @@ countdown:
 
   boss-bar:
     enabled: false
+    # Options: PINK, BLUE, RED, GREEN, YELLOW, PURPLE, WHITE
     color: RED
+    # Options: PROGRESS, NOTCHED_6, NOTCHED_10, NOTCHED_12, NOTCHED_20
     overlay: PROGRESS
     show-from: 5m
+    # true shrinks the bar with the countdown; false keeps it full.
     progress: true
 
 formatting:

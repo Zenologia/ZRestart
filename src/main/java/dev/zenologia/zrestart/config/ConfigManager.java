@@ -36,8 +36,9 @@ public final class ConfigManager {
         if (!this.plugin.getDataFolder().exists() && !this.plugin.getDataFolder().mkdirs()) {
             throw new IllegalStateException("Could not create plugin data folder.");
         }
-        saveResourceIfMissing("config.yml");
-        saveResourceIfMissing("messages.yml");
+        YamlFileMigrator migrator = new YamlFileMigrator(this.plugin);
+        migrateResource(migrator, "config.yml", "config-version");
+        migrateResource(migrator, "messages.yml", "messages-version");
     }
 
     public ConfigLoadResult loadCandidate() throws IOException, InvalidConfigurationException {
@@ -231,10 +232,17 @@ public final class ConfigManager {
         }
     }
 
-    private void saveResourceIfMissing(String resource) {
-        File file = new File(this.plugin.getDataFolder(), resource);
-        if (!file.exists()) {
-            this.plugin.saveResource(resource, false);
+    private void migrateResource(YamlFileMigrator migrator, String resource, String versionPath) {
+        try {
+            YamlMigrationResult result = migrator.migrateResource(resource, versionPath);
+            if (result.migrated()) {
+                this.plugin.getLogger().info(
+                    "Updated " + resource + " from version " + result.previousVersion()
+                        + " to " + result.currentVersion() + ". Backup: " + result.backupFile().getName()
+                );
+            }
+        } catch (IOException | InvalidConfigurationException ex) {
+            this.plugin.getLogger().warning("Could not auto-update " + resource + ": " + ex.getMessage());
         }
     }
 

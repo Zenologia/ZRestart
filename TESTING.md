@@ -35,6 +35,7 @@ Before runtime testing:
 | DST behavior | Gap moves to next valid time, overlap uses later occurrence |
 | Warning behavior | De-dupe and repeated warnings after delay |
 | Reload behavior | Invalid snapshot keeps the previous valid config |
+| File migration | Old config/message versions migrate, preserve admin values, add defaults/comments, and create backups |
 
 Run when ready:
 
@@ -53,6 +54,32 @@ Run when ready:
 | PlaceholderAPI absent | Start without PlaceholderAPI | Plugin loads and logs internal-placeholder behavior |
 | Restart script valid | Configure `settings.restart-script` | No missing-script warning |
 | Restart script missing | Remove or blank restart script | Configurable warning is logged |
+| Old config version | Remove `config-version` and restart | File migrates and `config.yml.bak-*` is created |
+| Old messages version | Remove `messages-version` and restart | File migrates and `messages.yml.bak-*` is created |
+
+---
+
+## Versioned file migration tests
+
+Use these tests after changing bundled `config.yml` or `messages.yml`.
+
+| Test | Steps | Expected result |
+|---|---|---|
+| Missing config version | Remove `config-version` from installed `config.yml`, then restart | Treated as version `0`, migrated to bundled version, backup created |
+| Missing messages version | Remove `messages-version` from installed `messages.yml`, then restart | Treated as version `0`, migrated to bundled version, backup created |
+| Lower version | Set installed version lower than bundled version | File rewrites from latest template and preserves matching admin values |
+| Same version | Set installed version equal to bundled version | File is not rewritten |
+| Higher version | Set installed version higher than bundled version | File is not downgraded |
+| New default key | Add a new bundled key and bump version | Existing admin file receives the new default key |
+| Admin value preservation | Change `settings.timezone`, then migrate | Admin value remains after migration |
+| Template comments | Add/update bundled comments and bump version | Updated comments appear after migration |
+| Backup safety | Migrate any older file | Original file exists as `config.yml.bak-*` or `messages.yml.bak-*` |
+
+Maintainer rule:
+
+- Bump `config-version` only for config schema/default/comment updates.
+- Bump `messages-version` only for message key/default/comment updates.
+- Do not bump either version for Java-only changes.
 
 ---
 
@@ -168,6 +195,7 @@ Expected result:
 | Invalid timezone | Set bad timezone and valid fallback | Warning logs and fallback timezone is used |
 | Bad fallback timezone | Set timezone and fallback both invalid | Reload fails and old config remains active |
 | Manual countdown reload | Start `/zrestart now 30m Test`, then reload | Manual countdown continues |
+| File version reload | Change `config-version` while server is running and run `/zrestart reload` | Version migration does not run during reload; reload only validates and applies current files |
 
 ---
 
@@ -194,6 +222,8 @@ Expected result:
 - [ ] Delay allows warning thresholds to fire again.
 - [ ] Stop cancels countdowns and removes boss bars.
 - [ ] Reload keeps old config when new config is invalid.
+- [ ] Old `config.yml` and `messages.yml` versions auto-update on startup with backups.
+- [ ] Same-version config/message files are not rewritten.
 - [ ] Schedule parsing accepts valid entries and skips invalid ones.
 - [ ] DST gap/overlap cases warn and resolve safely.
 - [ ] Chat, title, and boss bar warnings work independently.

@@ -26,6 +26,7 @@ A lightweight Paper-only automatic restart scheduler for Minecraft Java 26.x ser
 - MiniMessage and legacy `&` color support
 - Configurable timezone with DST gap/overlap handling
 - Soft PlaceholderAPI support for player-bound messages
+- Versioned `config.yml` and `messages.yml` auto-updates with backups
 - Restart-script diagnostic warning for unsafe `Bukkit.restart()` setups
 - Atomic reload behavior that keeps the previous valid runtime config on reload failure
 - Focused parser, scheduler, warning, and reload unit tests
@@ -61,6 +62,43 @@ Important notes:
 - ZRestart intentionally targets Paper 26.x and newer compatible Paper APIs only.
 - PlaceholderAPI is optional and must not be bundled with the plugin.
 - Changing schedules with `/zrestart now`, `/zrestart delay`, or `/zrestart stop` never rewrites `config.yml`.
+- Plugin updates may rewrite old `config.yml` and `messages.yml` files from the latest bundled templates, but matching admin values are carried over and timestamped backups are created first.
+
+---
+
+## Config and message auto-updates
+
+ZRestart uses schema version numbers at the top of each file:
+
+```yaml
+config-version: 1
+```
+
+```yaml
+messages-version: 1
+```
+
+When the plugin starts, it compares the installed file version to the bundled file version.
+
+| Case | Result |
+|---|---|
+| Installed version is missing | Treated as version `0` and migrated |
+| Installed version is lower | Backup is created, file is rewritten from the latest template, matching admin values are preserved |
+| Installed version is the same | File is left alone |
+| Installed version is higher | File is left alone and never downgraded |
+
+Backups are saved beside the original files:
+
+```text
+config.yml.bak-YYYYMMDD-HHMMSS
+messages.yml.bak-YYYYMMDD-HHMMSS
+```
+
+For plugin maintainers:
+
+- Bump `config-version` when adding config keys, changing defaults, or pushing updated config comments.
+- Bump `messages-version` when adding message keys, changing message defaults, or pushing updated message comments.
+- Do not bump these versions for Java-only changes.
 
 ---
 
@@ -163,6 +201,8 @@ Pacific/Kiritimati
 Example:
 
 ```yaml
+config-version: 1
+
 settings:
   timezone: "America/New_York"
   fallback-timezone: "UTC"
@@ -242,6 +282,8 @@ All player, admin, and console-facing messages live in `messages.yml`.
 Example:
 
 ```yaml
+messages-version: 1
+
 prefix: "<gray>[<red>ZRestart</red>]</gray> "
 
 commands:
@@ -350,6 +392,7 @@ Tab-completion is included for subcommands, interval examples, and common/config
 - A schedule entry is skipped: check day spelling, hour range `0-23`, and minute range `0-59`.
 - Reload fails: ZRestart keeps the previous valid runtime config and logs the reason.
 - Boss bar never appears: enable `countdown.boss-bar.enabled` and make sure the countdown is inside `show-from`.
+- After a plugin update, review `config.yml.bak-*` or `messages.yml.bak-*` if an admin needs to compare pre-update values/comments.
 
 ---
 
