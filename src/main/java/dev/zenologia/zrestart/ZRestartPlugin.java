@@ -61,10 +61,10 @@ public final class ZRestartPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        this.configManager = new ConfigManager(this, this.durationParser);
-        this.configManager.ensureDefaults();
-
         try {
+            this.configManager = new ConfigManager(this, this.durationParser);
+            this.configManager.ensureDefaults();
+
             this.messageManager = new MessageManager(this);
             this.messageManager.loadInitial();
 

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -84,6 +85,27 @@ class YamlFileMigratorTest {
 
         assertFalse(result.migrated());
         assertEquals(5, load(file).getInt("config-version"));
+    }
+
+    @Test
+    void migratesTemplateCommentsWithBlankLines() throws Exception {
+        Path file = this.tempDir.resolve("config.yml");
+        Files.writeString(
+            file,
+            """
+            config-version: 1
+            settings:
+              timezone: "UTC"
+            """
+        );
+
+        YamlConfiguration latest = latestTemplate(2);
+        latest.setComments("settings.timezone", Arrays.asList("First line.", null, "Third line."));
+
+        YamlMigrationResult result = new YamlFileMigrator(null).migrate(file.toFile(), latest, "config-version");
+
+        assertTrue(result.migrated());
+        assertEquals(List.of("First line.", "", "Third line."), load(file).getComments("settings.timezone"));
     }
 
     private static YamlConfiguration latestTemplate(int version) {

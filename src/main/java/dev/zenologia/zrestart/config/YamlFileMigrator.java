@@ -47,7 +47,7 @@ public final class YamlFileMigrator {
 
         File backup = createBackup(target);
         List<String> rawHeader = latest.options().getHeader();
-        List<String> header = rawHeader == null ? List.of() : List.copyOf(rawHeader);
+        List<String> header = sanitizeCommentLines(rawHeader);
         Map<String, List<String>> comments = collectComments(latest, false);
         Map<String, List<String>> inlineComments = collectComments(latest, true);
 
@@ -107,11 +107,20 @@ public final class YamlFileMigrator {
         Map<String, List<String>> comments = new LinkedHashMap<>();
         for (String path : yaml.getKeys(true)) {
             List<String> pathComments = inline ? yaml.getInlineComments(path) : yaml.getComments(path);
-            if (!pathComments.isEmpty()) {
-                comments.put(path, List.copyOf(pathComments));
+            if (pathComments != null && !pathComments.isEmpty()) {
+                comments.put(path, sanitizeCommentLines(pathComments));
             }
         }
         return comments;
+    }
+
+    private static List<String> sanitizeCommentLines(List<String> comments) {
+        if (comments == null || comments.isEmpty()) {
+            return List.of();
+        }
+        return comments.stream()
+            .map(line -> line == null ? "" : line)
+            .toList();
     }
 
     private static void restoreComments(YamlConfiguration yaml, Map<String, List<String>> comments, boolean inline) {
