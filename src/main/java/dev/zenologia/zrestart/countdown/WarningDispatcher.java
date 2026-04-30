@@ -28,9 +28,10 @@ public final class WarningDispatcher {
             if (!state.markWarningFired(threshold)) {
                 continue;
             }
+            Duration warningTime = Duration.ofSeconds(threshold);
             Duration remaining = Duration.ofSeconds(remainingSeconds);
             for (DisplayChannel channel : this.channels) {
-                channel.showWarning(state, remaining);
+                channel.showWarning(state, warningTime, remaining);
             }
         }
     }

@@ -12,9 +12,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import net.kyori.adventure.bossbar.BossBar;
+import org.bukkit.SoundCategory;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -22,6 +24,9 @@ public final class ConfigManager {
     private static final Duration DEFAULT_BOSS_BAR_SHOW_FROM = Duration.ofMinutes(5);
     private static final BossBar.Color DEFAULT_BOSS_BAR_COLOR = BossBar.Color.RED;
     private static final BossBar.Overlay DEFAULT_BOSS_BAR_OVERLAY = BossBar.Overlay.PROGRESS;
+    private static final SoundCategory DEFAULT_SOUND_CATEGORY = SoundCategory.MASTER;
+    private static final float DEFAULT_SOUND_VOLUME = 1.0F;
+    private static final float DEFAULT_SOUND_PITCH = 1.0F;
 
     private final ZRestartPlugin plugin;
     private final DurationParser durationParser;
@@ -76,8 +81,9 @@ public final class ConfigManager {
             Math.max(0, yaml.getInt("countdown.title.fade-out", 10))
         );
         RestartConfig.BossBarSettings bossBar = parseBossBar(yaml, warnings);
+        RestartConfig.SoundSettings sounds = parseSounds(yaml, warningTimes, warnings);
 
-        if (!chat.enabled() && !title.enabled() && !bossBar.enabled()) {
+        if (!chat.enabled() && !title.enabled() && !bossBar.enabled() && !soundChannelActive(sounds)) {
             errors.add("At least one countdown display channel must be enabled.");
         }
 
@@ -93,7 +99,7 @@ public final class ConfigManager {
                 yaml.getBoolean("schedule.enabled", true),
                 List.copyOf(yaml.getStringList("schedule.entries"))
             ),
-            new RestartConfig.Countdown(warningTimes, chat, title, bossBar),
+            new RestartConfig.Countdown(warningTimes, chat, title, bossBar, sounds),
             new RestartConfig.Formatting(
                 yaml.getBoolean("formatting.minimessage", true),
                 yaml.getBoolean("formatting.legacy-ampersand-colors", true),
@@ -193,6 +199,157 @@ public final class ConfigManager {
                 .build()
         ));
         return DEFAULT_BOSS_BAR_SHOW_FROM;
+    }
+
+    private RestartConfig.SoundSettings parseSounds(
+        YamlConfiguration yaml,
+        List<Duration> warningTimes,
+        List<ConfigWarning> warnings
+    ) {
+        boolean enabled = yaml.getBoolean("countdown.sounds.enabled", false);
+        SoundCategory category = parseSoundCategory(yaml.getString("countdown.sounds.category", "MASTER"), warnings);
+        Set<Long> configuredWarningSeconds = warningSeconds(warningTimes);
+        List<RestartConfig.SoundEntry> entries = parseSoundEntries(yaml.getMapList("countdown.sounds.entries"), configuredWarningSeconds, warnings);
+
+        if (enabled && entries.isEmpty()) {
+            warnings.add(new ConfigWarning("console.no-valid-sound-entries", PlaceholderContext.empty()));
+        }
+
+        return new RestartConfig.SoundSettings(enabled, category, List.copyOf(entries));
+    }
+
+    private SoundCategory parseSoundCategory(String raw, List<ConfigWarning> warnings) {
+        try {
+            return SoundCategory.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+        } catch (RuntimeException ex) {
+            warnings.add(new ConfigWarning(
+                "console.invalid-sound-category",
+                PlaceholderContext.builder()
+                    .put("entry", raw)
+                    .put("error", DEFAULT_SOUND_CATEGORY.name())
+                    .build()
+            ));
+            return DEFAULT_SOUND_CATEGORY;
+        }
+    }
+
+    private List<RestartConfig.SoundEntry> parseSoundEntries(
+        List<Map<?, ?>> rawEntries,
+        Set<Long> configuredWarningSeconds,
+        List<ConfigWarning> warnings
+    ) {
+        List<RestartConfig.SoundEntry> entries = new ArrayList<>();
+        for (Map<?, ?> rawEntry : rawEntries) {
+            String entryText = String.valueOf(rawEntry);
+            String rawTime = stringValue(rawEntry, "time");
+            String rawSound = stringValue(rawEntry, "sound");
+
+            if (rawTime == null || rawTime.isBlank() || rawSound == null || rawSound.isBlank()) {
+                warnings.add(new ConfigWarning(
+                    "console.invalid-sound-entry",
+                    PlaceholderContext.builder()
+                        .put("entry", entryText)
+                        .put("error", "Each sound entry needs time and sound.")
+                        .build()
+                ));
+                continue;
+            }
+
+            DurationParser.ParseResult parsedTime = this.durationParser.parse(rawTime);
+            if (!parsedTime.successful()) {
+                warnings.add(new ConfigWarning(
+                    "console.invalid-sound-entry",
+                    PlaceholderContext.builder()
+                        .put("entry", entryText)
+                        .put("error", parsedTime.error())
+                        .build()
+                ));
+                continue;
+            }
+
+            long seconds = parsedTime.duration().toSeconds();
+            if (!configuredWarningSeconds.contains(seconds)) {
+                warnings.add(new ConfigWarning(
+                    "console.sound-time-not-configured",
+                    PlaceholderContext.builder()
+                        .put("entry", rawTime)
+                        .build()
+                ));
+                continue;
+            }
+
+            RestartConfig.SoundReference sound = SoundResolver.resolve(rawSound).orElse(null);
+            if (sound == null) {
+                warnings.add(new ConfigWarning(
+                    "console.invalid-sound-entry",
+                    PlaceholderContext.builder()
+                        .put("entry", entryText)
+                        .put("error", "Unknown Bukkit sound name or invalid namespaced key.")
+                        .build()
+                ));
+                continue;
+            }
+
+            entries.add(new RestartConfig.SoundEntry(
+                parsedTime.duration(),
+                sound,
+                parseSoundFloat(rawEntry, "volume", DEFAULT_SOUND_VOLUME, warnings),
+                parseSoundFloat(rawEntry, "pitch", DEFAULT_SOUND_PITCH, warnings)
+            ));
+        }
+        return entries;
+    }
+
+    private Set<Long> warningSeconds(List<Duration> warningTimes) {
+        Set<Long> seconds = new TreeSet<>();
+        for (Duration warningTime : warningTimes) {
+            seconds.add(warningTime.toSeconds());
+        }
+        return seconds;
+    }
+
+    private String stringValue(Map<?, ?> entry, String key) {
+        Object value = entry.get(key);
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private float parseSoundFloat(Map<?, ?> entry, String key, float fallback, List<ConfigWarning> warnings) {
+        Object raw = entry.get(key);
+        if (raw == null || String.valueOf(raw).isBlank()) {
+            return fallback;
+        }
+
+        float parsed;
+        if (raw instanceof Number number) {
+            parsed = number.floatValue();
+        } else {
+            try {
+                parsed = Float.parseFloat(String.valueOf(raw));
+            } catch (NumberFormatException ex) {
+                return warnAndFallbackSoundFloat(raw, key, fallback, warnings);
+            }
+        }
+
+        if (Float.isNaN(parsed) || Float.isInfinite(parsed) || parsed < 0.0F || ("pitch".equals(key) && parsed <= 0.0F)) {
+            return warnAndFallbackSoundFloat(raw, key, fallback, warnings);
+        }
+        return parsed;
+    }
+
+    private float warnAndFallbackSoundFloat(Object raw, String key, float fallback, List<ConfigWarning> warnings) {
+        warnings.add(new ConfigWarning(
+            "console.invalid-sound-number",
+            PlaceholderContext.builder()
+                .put("field", key)
+                .put("entry", raw)
+                .put("error", fallback)
+                .build()
+        ));
+        return fallback;
+    }
+
+    private boolean soundChannelActive(RestartConfig.SoundSettings sounds) {
+        return sounds.enabled() && !sounds.entries().isEmpty();
     }
 
     private RestartConfig.FailureBehavior parseFailureBehavior(String raw, List<ConfigWarning> warnings) {

@@ -13,6 +13,7 @@ import dev.zenologia.zrestart.display.BossBarDisplay;
 import dev.zenologia.zrestart.display.ChatDisplay;
 import dev.zenologia.zrestart.display.DisplayChannel;
 import dev.zenologia.zrestart.display.DisplayPlaceholders;
+import dev.zenologia.zrestart.display.SoundDisplay;
 import dev.zenologia.zrestart.display.TitleDisplay;
 import dev.zenologia.zrestart.placeholders.PlaceholderContext;
 import dev.zenologia.zrestart.placeholders.PlaceholderService;
@@ -112,9 +113,10 @@ public final class ZRestartPlugin extends JavaPlugin {
         ChatDisplay chatDisplay = new ChatDisplay(this.renderer, this::currentConfig, this.timeFormatter);
         TitleDisplay titleDisplay = new TitleDisplay(this.messageManager, this.renderer, this::currentConfig, this.timeFormatter);
         BossBarDisplay bossBarDisplay = new BossBarDisplay(this.messageManager, this.renderer, this::currentConfig, this.timeFormatter);
+        SoundDisplay soundDisplay = new SoundDisplay(this::currentConfig);
         Bukkit.getPluginManager().registerEvents(bossBarDisplay, this);
 
-        this.displayChannels = List.of(chatDisplay, titleDisplay, bossBarDisplay);
+        this.displayChannels = List.of(chatDisplay, titleDisplay, bossBarDisplay, soundDisplay);
         this.warningDispatcher.configure(this.currentConfig, this.displayChannels);
 
         RestartExecutor restartExecutor = new RestartExecutor(this, this.renderer, this.timeFormatter);

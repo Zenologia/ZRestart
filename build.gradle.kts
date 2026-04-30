@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "dev.zenologia"
-version = "1.1"
+version = "1.2"
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")

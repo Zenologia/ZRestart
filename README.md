@@ -6,7 +6,7 @@ A lightweight Paper-only automatic restart scheduler for Minecraft Java 26.x ser
 
 - ✅ Schedules restarts with UAR-style entries: `DAY;HOUR;MINUTE[;REASON]`.
 - ✅ Supports manual restart countdowns, delays, cancellations, and reloads under `/zrestart`.
-- ✅ Sends countdown warnings through chat, titles, and boss bars from one shared warning list.
+- ✅ Sends countdown warnings through chat, titles, boss bars, and sounds from one shared warning list.
 - ✅ Calls `Bukkit.restart()` directly and attempts player/world saves before restart.
 - ✅ Runs optional pre-restart console commands with `CONTINUE` or `ABORT` failure behavior.
 - ✅ Consumes PlaceholderAPI placeholders in player-bound messages when PlaceholderAPI is installed.
@@ -22,7 +22,7 @@ A lightweight Paper-only automatic restart scheduler for Minecraft Java 26.x ser
 - Manual `/zrestart now <interval> [reason]` countdowns
 - Manual `/zrestart delay <interval>` and `/zrestart stop`
 - Shared configurable warning thresholds like `30m`, `1:30`, `3600`, and `1h 30m`
-- Chat, title, and boss bar warning channels
+- Chat, title, boss bar, and sound warning channels
 - MiniMessage and legacy `&` color support
 - Configurable timezone with DST gap/overlap handling
 - Soft PlaceholderAPI support for player-bound messages
@@ -71,11 +71,11 @@ Important notes:
 ZRestart uses schema version numbers at the top of each file:
 
 ```yaml
-config-version: 1
+config-version: 2
 ```
 
 ```yaml
-messages-version: 1
+messages-version: 2
 ```
 
 When the plugin starts, it compares the installed file version to the bundled file version.
@@ -201,7 +201,7 @@ Pacific/Kiritimati
 Example:
 
 ```yaml
-config-version: 1
+config-version: 2
 
 settings:
   timezone: "America/New_York"
@@ -245,6 +245,19 @@ countdown:
     show-from: 5m
     progress: true
 
+  sounds:
+    enabled: false
+    category: MASTER
+    entries:
+      - time: 30m
+        sound: BLOCK_NOTE_BLOCK_PLING
+        volume: 1.0
+        pitch: 1.0
+      - time: 5s
+        sound: minecraft:block.note_block.pling
+        volume: 1.0
+        pitch: 1.5
+
 formatting:
   minimessage: true
   legacy-ampersand-colors: true
@@ -272,6 +285,12 @@ pre-restart-commands:
 - Invalid schedule entries are skipped with configurable console warnings.
 - At least one countdown display channel should be enabled.
 - Boss bar `show-from` does not need to appear in `warning-times`.
+- Sound entry `time` values must also appear in `countdown.warning-times`.
+- Sound `category` options are `MASTER`, `MUSIC`, `RECORDS`, `WEATHER`, `BLOCKS`, `HOSTILE`, `NEUTRAL`, `PLAYERS`, `AMBIENT`, `VOICE`, and `UI`.
+- Sound names support Bukkit names like `BLOCK_NOTE_BLOCK_PLING` and namespaced keys like `minecraft:block.note_block.pling` or `custom:restart_ping`.
+- Sound categories: [Paper SoundCategory API](https://jd.papermc.io/paper/26.1.2/org/bukkit/SoundCategory.html).
+- Bukkit sound names: [Paper Sound API](https://jd.papermc.io/paper/26.1.2/org/bukkit/Sound.html).
+- Minecraft sound keys: [Minecraft 26.1 sounds.json](https://mcasset.cloud/26.1/assets/minecraft/sounds.json).
 
 ---
 
@@ -282,7 +301,7 @@ All player, admin, and console-facing messages live in `messages.yml`.
 Example:
 
 ```yaml
-messages-version: 1
+messages-version: 2
 
 prefix: "<gray>[<red>ZRestart</red>]</gray> "
 
@@ -314,6 +333,7 @@ countdown:
 | `{error}` | Validation or command error |
 | `{command}` | Command usage or failed command |
 | `{permission}` | Missing permission node |
+| `{field}` | Config field name in validation warnings |
 
 ---
 
@@ -392,6 +412,7 @@ Tab-completion is included for subcommands, interval examples, and common/config
 - A schedule entry is skipped: check day spelling, hour range `0-23`, and minute range `0-59`.
 - Reload fails: ZRestart keeps the previous valid runtime config and logs the reason.
 - Boss bar never appears: enable `countdown.boss-bar.enabled` and make sure the countdown is inside `show-from`.
+- Sound never plays: enable `countdown.sounds.enabled`, verify the sound entry time is listed in `countdown.warning-times`, and confirm the sound name exists in Bukkit or the player's resource pack.
 - After a plugin update, review `config.yml.bak-*` or `messages.yml.bak-*` if an admin needs to compare pre-update values/comments.
 
 ---

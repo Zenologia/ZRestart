@@ -34,6 +34,7 @@ Before runtime testing:
 | Next restart | Daily, weekly, earliest future selection, same-day passed handling |
 | DST behavior | Gap moves to next valid time, overlap uses later occurrence |
 | Warning behavior | De-dupe and repeated warnings after delay |
+| Sound resolution | Bukkit sound names, namespaced Minecraft keys, invalid key rejection |
 | Reload behavior | Invalid snapshot keeps the previous valid config |
 | File migration | Old config/message versions migrate, preserve admin values, add defaults/comments, and create backups |
 
@@ -165,8 +166,14 @@ Expected result:
 | Chat only | `chat.enabled: true`, title/boss bar false | Chat warnings fire |
 | Title only | `title.enabled: true`, chat/boss bar false | Title/subtitle warnings fire |
 | Boss bar only | `boss-bar.enabled: true`, chat/title false | Boss bar appears, shrinks, and clears |
+| Sound only | `sounds.enabled: true`, chat/title/boss bar false, valid sound entries | Sounds play at configured warning times |
+| Sound categories | Change `sounds.category` through valid values | Sound remains audible through the selected client category |
+| Bukkit sound name | Use `BLOCK_NOTE_BLOCK_PLING` | Sound plays without validation warnings |
+| Minecraft sound key | Use `minecraft:block.note_block.pling` | Sound plays without validation warnings |
+| Custom sound key | Use a resource-pack key like `custom:restart_ping` | Key is accepted and plays for clients with the resource pack |
+| Sound time mismatch | Set a sound entry `time` not present in `warning-times` | Entry is skipped with a console warning |
 | Boss show-from | `show-from: 2m` with no `2m` warning | Boss bar still appears at 2 minutes |
-| All channels | Enable chat, title, boss bar | All channels fire from the same warning list |
+| All channels | Enable chat, title, boss bar, and sounds | All channels fire from the same warning list |
 | Join mid-countdown | Join while boss bar is visible | Joining player sees the boss bar immediately |
 | Delay repeat | Fire 5m warning, delay above 5m, wait | 5m warning fires again |
 
@@ -192,6 +199,10 @@ Expected result:
 | Valid reload | Edit config and run `/zrestart reload` | New config applies |
 | Invalid schedule | Add one bad schedule entry | Bad entry warns; valid entries remain active |
 | Invalid snapshot | Disable all display channels and reload | Reload fails and old config remains active |
+| Sound-only valid snapshot | Disable chat/title/boss bar, enable valid sounds, and reload | Reload succeeds |
+| Sound-only invalid snapshot | Disable chat/title/boss bar, enable sounds with no valid entries, and reload | Reload fails and old config remains active |
+| Invalid sound category | Set `sounds.category` to a bad value and reload | Warning logs and `MASTER` is used |
+| Invalid sound entry | Set a bad sound name or invalid namespaced key and reload | Entry is skipped with a console warning |
 | Invalid timezone | Set bad timezone and valid fallback | Warning logs and fallback timezone is used |
 | Bad fallback timezone | Set timezone and fallback both invalid | Reload fails and old config remains active |
 | Manual countdown reload | Start `/zrestart now 30m Test`, then reload | Manual countdown continues |
@@ -227,6 +238,9 @@ Expected result:
 - [ ] Schedule parsing accepts valid entries and skips invalid ones.
 - [ ] DST gap/overlap cases warn and resolve safely.
 - [ ] Chat, title, and boss bar warnings work independently.
+- [ ] Sound warnings work independently with Bukkit names and namespaced keys.
+- [ ] Sound entries only fire at matching `warning-times`.
+- [ ] Invalid sound entries warn and do not break valid entries.
 - [ ] Boss bar appears at `show-from` even outside `warning-times`.
 - [ ] PlaceholderAPI is optional and never required for startup.
 - [ ] ZRestart does not register a PlaceholderAPI expansion.

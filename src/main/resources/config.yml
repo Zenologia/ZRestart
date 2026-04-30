@@ -1,5 +1,5 @@
 # ZRestart configuration
-config-version: 1
+config-version: 2
 
 settings:
   # See the admin README at https://github.com/Zenologia/ZRestart for valid timezones.
@@ -46,6 +46,23 @@ countdown:
     show-from: 5m
     # true shrinks the bar with the countdown; false keeps it full.
     progress: true
+
+  sounds:
+    enabled: false
+    # Options: MASTER, MUSIC, RECORDS, WEATHER, BLOCKS, HOSTILE, NEUTRAL, PLAYERS, AMBIENT, VOICE, UI
+    category: MASTER
+    # Each time must also exist in countdown.warning-times.
+    # Bukkit sound names: https://jd.papermc.io/paper/26.1.2/org/bukkit/Sound.html
+    # Minecraft sound keys: https://mcasset.cloud/26.1/assets/minecraft/sounds.json
+    entries:
+      - time: 30m
+        sound: BLOCK_NOTE_BLOCK_PLING
+        volume: 1.0
+        pitch: 1.0
+      - time: 5s
+        sound: minecraft:block.note_block.pling
+        volume: 1.0
+        pitch: 1.5
 
 formatting:
   minimessage: true

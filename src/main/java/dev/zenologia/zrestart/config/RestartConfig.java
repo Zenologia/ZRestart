@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.ZoneId;
 import java.util.List;
 import net.kyori.adventure.bossbar.BossBar;
+import org.bukkit.SoundCategory;
 
 public record RestartConfig(
     Settings settings,
@@ -28,7 +29,8 @@ public record RestartConfig(
         List<Duration> warningTimes,
         Chat chat,
         Title title,
-        BossBarSettings bossBar
+        BossBarSettings bossBar,
+        SoundSettings sounds
     ) {
     }
 
@@ -45,6 +47,31 @@ public record RestartConfig(
         Duration showFrom,
         boolean progress
     ) {
+    }
+
+    public record SoundSettings(
+        boolean enabled,
+        SoundCategory category,
+        List<SoundEntry> entries
+    ) {
+    }
+
+    public record SoundEntry(
+        Duration time,
+        SoundReference sound,
+        float volume,
+        float pitch
+    ) {
+    }
+
+    public record SoundReference(
+        String input,
+        String bukkitSoundName,
+        String namespacedKey
+    ) {
+        public boolean usesBukkitSound() {
+            return this.bukkitSoundName != null;
+        }
     }
 
     public record Formatting(

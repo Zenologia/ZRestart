@@ -1,4 +1,4 @@
-messages-version: 1
+messages-version: 2
 
 prefix: "<gray>[<red>ZRestart</red>]</gray> "
 
@@ -61,6 +61,11 @@ console:
   dst-adjustment: "{prefix}Scheduled restart time '{entry}' was adjusted for daylight saving time: {error}"
   invalid-boss-bar-color: "{prefix}Invalid boss bar color '{entry}'. Falling back to {error}."
   invalid-boss-bar-overlay: "{prefix}Invalid boss bar overlay '{entry}'. Falling back to {error}."
+  invalid-sound-category: "{prefix}Invalid sound category '{entry}'. Falling back to {error}."
+  invalid-sound-entry: "{prefix}Skipping invalid sound entry '{entry}': {error}"
+  invalid-sound-number: "{prefix}Invalid sound {field} '{entry}'. Falling back to {error}."
+  no-valid-sound-entries: "{prefix}Sound warnings are enabled, but no valid sound entries are configured."
+  sound-time-not-configured: "{prefix}Skipping sound entry for '{entry}' because it is not listed in countdown.warning-times."
   invalid-pre-command-behavior: "{prefix}Invalid pre-restart failure behavior '{entry}'. Falling back to {error}."
   restart-script-missing: "{prefix}Could not verify a restart script. Bukkit.restart() may stop the server instead of restarting it."
   restart-script-not-found: "{prefix}Configured restart script was not found: {entry}"
