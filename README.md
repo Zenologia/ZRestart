@@ -21,6 +21,7 @@ A lightweight Paper-only automatic restart scheduler for Minecraft Java 26.x ser
 - ⏱️ Automatic restart scheduling using `Daily` or weekday entries
 - Manual `/zrestart now <interval> [reason]` countdowns
 - Manual `/zrestart delay <interval>` and `/zrestart stop`
+- Player title popups when manual restarts are scheduled or pending restarts are cancelled
 - Shared configurable warning thresholds like `30m`, `1:30`, `3600`, and `1h 30m`
 - Chat, title, boss bar, and sound warning channels
 - MiniMessage and legacy `&` color support
@@ -75,7 +76,7 @@ config-version: 2
 ```
 
 ```yaml
-messages-version: 2
+messages-version: 3
 ```
 
 When the plugin starts, it compares the installed file version to the bundled file version.
@@ -301,7 +302,7 @@ All player, admin, and console-facing messages live in `messages.yml`.
 Example:
 
 ```yaml
-messages-version: 2
+messages-version: 3
 
 prefix: "<gray>[<red>ZRestart</red>]</gray> "
 
@@ -309,6 +310,16 @@ commands:
   no-permission: "{prefix}<red>You do not have permission: {permission}</red>"
   invalid-usage: "{prefix}<red>Usage: {command}</red>"
   unknown-subcommand: "{prefix}<red>Unknown subcommand.</red>"
+
+now:
+  started: "{prefix}<gray>Manual restart countdown started for <red>{time_formatted}</red>. Reason: <red>{reason}</red></gray>"
+  popup-title: "<red>Restart Scheduled</red>"
+  popup-subtitle: "<gray>Restarting in <red>{time_formatted}</red>. Reason: <red>{reason}</red></gray>"
+
+stop:
+  cancelled: "{prefix}<gray>The active restart countdown has been cancelled.</gray>"
+  popup-title: "<green>Restart Cancelled</green>"
+  popup-subtitle: "<gray>The pending restart countdown has been cancelled.</gray>"
 
 countdown:
   chat: "{prefix}<gray>Server restart in <red>{time_formatted}</red>. Reason: <red>{reason}</red></gray>"

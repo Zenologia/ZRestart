@@ -26,9 +26,11 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.title.Title;
 import org.bukkit.command.CommandSender;
 
 public final class ZRestartCommand {
+    private static final long TICK_MILLIS = 50L;
     private static final DateTimeFormatter RESTART_TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
     private static final List<String> SUBCOMMANDS = List.of("time", "now", "delay", "stop", "reload");
     private static final List<String> INTERVAL_EXAMPLES = List.of("30m", "15m", "5m", "1m", "30s", "1:30", "0:30", "3600", "1h30m", "1h 30m");
@@ -135,11 +137,18 @@ public final class ZRestartCommand {
             : parsed.remainder().trim();
         plugin.countdownManager().startManual(parsed.duration(), reason);
         CountdownState state = plugin.countdownManager().activeState().orElseThrow();
+        PlaceholderContext placeholders = DisplayPlaceholders.countdown(
+            state,
+            parsed.duration(),
+            plugin.currentConfig(),
+            plugin.timeFormatter()
+        );
         plugin.renderer().send(
             sender,
             "now.started",
-            DisplayPlaceholders.countdown(state, parsed.duration(), plugin.currentConfig(), plugin.timeFormatter())
+            placeholders
         );
+        showCommandPopup(plugin, "now.popup-title", "now.popup-subtitle", placeholders);
     }
 
     private void handleDelay(ZRestartPlugin plugin, CommandSender sender, String tail) {
@@ -193,9 +202,19 @@ public final class ZRestartCommand {
             return;
         }
 
-        plugin.renderer().send(sender, "stop.cancelled", PlaceholderContext.empty());
         Instant now = Instant.now();
-        Instant after = cancelled.get().type() == CountdownType.SCHEDULED ? cancelled.get().target() : now;
+        CountdownState cancelledState = cancelled.get();
+        Duration remaining = Duration.ofSeconds(cancelledState.remainingSecondsCeil(now));
+        PlaceholderContext placeholders = DisplayPlaceholders.countdown(
+            cancelledState,
+            remaining,
+            plugin.currentConfig(),
+            plugin.timeFormatter()
+        );
+        plugin.renderer().send(sender, "stop.cancelled", PlaceholderContext.empty());
+        showCommandPopup(plugin, "stop.popup-title", "stop.popup-subtitle", placeholders);
+
+        Instant after = cancelledState.type() == CountdownType.SCHEDULED ? cancelledState.target() : now;
         plugin.scheduleService()
             .recalculateAfter(now, after)
             .ifPresent(plugin.countdownManager()::startScheduled);
@@ -230,6 +249,16 @@ public final class ZRestartCommand {
             "commands.invalid-usage",
             PlaceholderContext.builder().put("command", usage).build()
         );
+    }
+
+    private void showCommandPopup(ZRestartPlugin plugin, String titlePath, String subtitlePath, PlaceholderContext placeholders) {
+        RestartConfig.Title titleConfig = plugin.currentConfig().countdown().title();
+        Title.Times times = Title.Times.times(
+            Duration.ofMillis(titleConfig.fadeInTicks() * TICK_MILLIS),
+            Duration.ofMillis(titleConfig.stayTicks() * TICK_MILLIS),
+            Duration.ofMillis(titleConfig.fadeOutTicks() * TICK_MILLIS)
+        );
+        plugin.renderer().showTitleToPlayers(titlePath, subtitlePath, placeholders, times);
     }
 
     private PlaceholderContext nextRestartPlaceholders(ZRestartPlugin plugin, NextRestart next, Instant now) {

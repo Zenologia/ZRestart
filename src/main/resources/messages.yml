@@ -1,4 +1,4 @@
-messages-version: 2
+messages-version: 3
 
 prefix: "<gray>[<red>ZRestart</red>]</gray> "
 
@@ -22,6 +22,8 @@ time:
 
 now:
   started: "{prefix}<gray>Manual restart countdown started for <red>{time_formatted}</red>. Reason: <red>{reason}</red></gray>"
+  popup-title: "<red>Restart Scheduled</red>"
+  popup-subtitle: "<gray>Restarting in <red>{time_formatted}</red>. Reason: <red>{reason}</red></gray>"
   invalid-interval: "{prefix}<red>Invalid interval: {error}</red>"
 
 delay:
@@ -31,6 +33,8 @@ delay:
 
 stop:
   cancelled: "{prefix}<gray>The active restart countdown has been cancelled.</gray>"
+  popup-title: "<green>Restart Cancelled</green>"
+  popup-subtitle: "<gray>The pending restart countdown has been cancelled.</gray>"
   no-active-countdown: "{prefix}<red>There is no active restart countdown to cancel.</red>"
 
 reload:

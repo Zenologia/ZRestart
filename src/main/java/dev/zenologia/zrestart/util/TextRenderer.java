@@ -16,6 +16,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -67,6 +68,18 @@ public final class TextRenderer {
     public void sendToPlayers(String path, PlaceholderContext context) {
         for (Player player : Bukkit.getOnlinePlayers()) {
             send(player, path, context);
+        }
+    }
+
+    public void showTitleToPlayers(String titlePath, String subtitlePath, PlaceholderContext context, Title.Times times) {
+        String rawTitle = this.messages.string(titlePath);
+        String rawSubtitle = this.messages.string(subtitlePath);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.showTitle(Title.title(
+                component(player, rawTitle, context),
+                component(player, rawSubtitle, context),
+                times
+            ));
         }
     }
 

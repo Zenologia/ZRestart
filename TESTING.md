@@ -112,8 +112,10 @@ Expected results:
 - `/zrestart time` works for normal players by default.
 - Every documented interval format starts the correct countdown.
 - `/zrestart now` replaces any active countdown.
+- `/zrestart now` shows the configured restart scheduled title popup to online players.
 - `/zrestart delay` moves the active target later without editing `config.yml`.
 - `/zrestart stop` cancels the active countdown and removes boss bars.
+- `/zrestart stop` shows the configured restart cancelled title popup when it cancels a countdown.
 - `/zrestart reload` reloads both config files.
 
 ---
@@ -165,6 +167,10 @@ Expected result:
 |---|---|---|
 | Chat only | `chat.enabled: true`, title/boss bar false | Chat warnings fire |
 | Title only | `title.enabled: true`, chat/boss bar false | Title/subtitle warnings fire |
+| Manual start popup | Run `/zrestart now 30m Maintenance` | Online players see `now.popup-title` and `now.popup-subtitle` |
+| Cancel popup | Run `/zrestart stop` during an active countdown | Online players see `stop.popup-title` and `stop.popup-subtitle` |
+| Invalid manual start | Run `/zrestart now bad` | No player popup appears |
+| No active cancel | Run `/zrestart stop` with no countdown | No player popup appears |
 | Boss bar only | `boss-bar.enabled: true`, chat/title false | Boss bar appears, shrinks, and clears |
 | Sound only | `sounds.enabled: true`, chat/title/boss bar false, valid sound entries | Sounds play at configured warning times |
 | Sound categories | Change `sounds.category` through valid values | Sound remains audible through the selected client category |
@@ -230,8 +236,10 @@ Expected result:
 - [ ] `/zrestart time` works for default players.
 - [ ] Manual countdowns accept every documented interval format.
 - [ ] Manual countdowns replace active countdowns.
+- [ ] Manual countdown starts show the configured title popup to online players.
 - [ ] Delay allows warning thresholds to fire again.
 - [ ] Stop cancels countdowns and removes boss bars.
+- [ ] Stop shows the configured cancellation title popup only after a successful cancellation.
 - [ ] Reload keeps old config when new config is invalid.
 - [ ] Old `config.yml` and `messages.yml` versions auto-update on startup with backups.
 - [ ] Same-version config/message files are not rewritten.
