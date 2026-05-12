@@ -7,7 +7,10 @@ import dev.zenologia.zrestart.config.MessageManager;
 import dev.zenologia.zrestart.config.ReloadDecision;
 import dev.zenologia.zrestart.config.ReloadDecider;
 import dev.zenologia.zrestart.config.RestartConfig;
+import dev.zenologia.zrestart.api.ZRestartApi;
 import dev.zenologia.zrestart.countdown.CountdownManager;
+import dev.zenologia.zrestart.countdown.CountdownState;
+import dev.zenologia.zrestart.countdown.CountdownType;
 import dev.zenologia.zrestart.countdown.WarningDispatcher;
 import dev.zenologia.zrestart.display.BossBarDisplay;
 import dev.zenologia.zrestart.display.ChatDisplay;
@@ -15,6 +18,8 @@ import dev.zenologia.zrestart.display.DisplayChannel;
 import dev.zenologia.zrestart.display.DisplayPlaceholders;
 import dev.zenologia.zrestart.display.SoundDisplay;
 import dev.zenologia.zrestart.display.TitleDisplay;
+import dev.zenologia.zrestart.internal.BukkitRestartEventPublisher;
+import dev.zenologia.zrestart.internal.RestartEventPublisher;
 import dev.zenologia.zrestart.placeholders.PlaceholderContext;
 import dev.zenologia.zrestart.placeholders.PlaceholderService;
 import dev.zenologia.zrestart.restart.RestartExecutor;
@@ -35,6 +40,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class ZRestartPlugin extends JavaPlugin {
@@ -50,7 +56,10 @@ public final class ZRestartPlugin extends JavaPlugin {
     private WarningDispatcher warningDispatcher;
     private CountdownManager countdownManager;
     private ScheduleService scheduleService;
+    private RestartExecutor restartExecutor;
     private RestartScriptChecker restartScriptChecker;
+    private RestartEventPublisher restartEventPublisher;
+    private ZRestartApiProvider apiProvider;
     private List<DisplayChannel> displayChannels = List.of();
     private RestartConfig currentConfig;
     private boolean enabled;
@@ -96,6 +105,7 @@ public final class ZRestartPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         this.enabled = false;
+        unregisterApi();
         if (this.countdownManager != null) {
             this.countdownManager.stopTicker();
         }
@@ -119,10 +129,18 @@ public final class ZRestartPlugin extends JavaPlugin {
         this.displayChannels = List.of(chatDisplay, titleDisplay, bossBarDisplay, soundDisplay);
         this.warningDispatcher.configure(this.currentConfig, this.displayChannels);
 
-        RestartExecutor restartExecutor = new RestartExecutor(this, this.renderer, this.timeFormatter);
-        this.countdownManager = new CountdownManager(this, this.warningDispatcher, restartExecutor);
+        this.restartEventPublisher = new BukkitRestartEventPublisher();
+        this.restartExecutor = new RestartExecutor(this, this.renderer, this.timeFormatter, this.restartEventPublisher);
+        this.countdownManager = new CountdownManager(
+            this,
+            this.warningDispatcher,
+            this.restartExecutor::execute,
+            this.restartEventPublisher,
+            this::rescheduleAfterAbortedExecution
+        );
         this.scheduleService = new ScheduleService(new ScheduleParser(), new NextRestartCalculator(), this.renderer);
         this.restartScriptChecker = new RestartScriptChecker(this, this.renderer);
+        registerApi();
 
         logConfigWarnings(configWarnings);
         logPlaceholderStatus();
@@ -136,6 +154,26 @@ public final class ZRestartPlugin extends JavaPlugin {
         }
 
         logLoadedMessage();
+    }
+
+    private void registerApi() {
+        this.apiProvider = new ZRestartApiProvider(this);
+        Bukkit.getServicesManager().register(ZRestartApi.class, this.apiProvider, this, ServicePriority.Normal);
+    }
+
+    private void unregisterApi() {
+        if (this.apiProvider != null) {
+            Bukkit.getServicesManager().unregister(ZRestartApi.class, this.apiProvider);
+            this.apiProvider = null;
+        }
+    }
+
+    private void rescheduleAfterAbortedExecution(CountdownState state) {
+        Instant now = Instant.now();
+        Instant after = state.type() == CountdownType.SCHEDULED ? state.target() : now;
+        this.scheduleService
+            .recalculateAfter(now, after)
+            .ifPresent(this.countdownManager::startScheduled);
     }
 
     public void reloadFromCommand(CommandSender sender) {
@@ -163,7 +201,7 @@ public final class ZRestartPlugin extends JavaPlugin {
             if (this.countdownManager.manualActive()) {
                 this.countdownManager.reapplyWarningThresholds();
             } else {
-                this.countdownManager.clear();
+                this.countdownManager.cancelActive();
                 this.scheduleService.nextRestart().ifPresent(this.countdownManager::startScheduled);
             }
 
@@ -250,5 +288,9 @@ public final class ZRestartPlugin extends JavaPlugin {
 
     public ScheduleService scheduleService() {
         return this.scheduleService;
+    }
+
+    boolean restartExecuting() {
+        return this.restartExecutor != null && this.restartExecutor.executing();
     }
 }

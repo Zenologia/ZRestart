@@ -55,9 +55,7 @@ public final class BossBarDisplay implements DisplayChannel, Listener {
         }
 
         PlaceholderContext placeholders = DisplayPlaceholders.countdown(state, remaining, config, this.timeFormatter);
-        float progress = settings.progress()
-            ? (float) Math.max(0.0D, Math.min(1.0D, remaining.toSeconds() / (double) Math.max(1L, state.totalSeconds())))
-            : 1.0F;
+        float progress = progress(remaining, state.totalSeconds(), settings.showFrom(), settings.progress());
 
         if (this.visibleState == null || this.visibleState.id() != state.id()) {
             clear();
@@ -89,11 +87,18 @@ public final class BossBarDisplay implements DisplayChannel, Listener {
             RestartConfig config = this.configSupplier.get();
             RestartConfig.BossBarSettings settings = config.countdown().bossBar();
             PlaceholderContext placeholders = DisplayPlaceholders.countdown(this.visibleState, this.visibleRemaining, config, this.timeFormatter);
-            float progress = settings.progress()
-                ? (float) Math.max(0.0D, Math.min(1.0D, this.visibleRemaining.toSeconds() / (double) Math.max(1L, this.visibleState.totalSeconds())))
-                : 1.0F;
+            float progress = progress(this.visibleRemaining, this.visibleState.totalSeconds(), settings.showFrom(), settings.progress());
             updatePlayerBar(event.getPlayer(), placeholders, progress, settings);
         }
+    }
+
+    static float progress(Duration remaining, long totalSeconds, Duration showFrom, boolean progressEnabled) {
+        if (!progressEnabled) {
+            return 1.0F;
+        }
+
+        long visibleSeconds = Math.min(Math.max(1L, totalSeconds), Math.max(1L, showFrom.toSeconds()));
+        return (float) Math.max(0.0D, Math.min(1.0D, remaining.toSeconds() / (double) visibleSeconds));
     }
 
     private void updatePlayerBar(Player player, PlaceholderContext placeholders, float progress, RestartConfig.BossBarSettings settings) {

@@ -447,3 +447,9 @@ For a full admin-friendly verification pass, see [TESTING.md](./TESTING.md).
 - **Zenologia**
 - [GitHub Repository]https://github.com/Zenologia/ZRestart
 - [License]https://github.com/Zenologia/ZRestart/blob/main/LICENSE
+
+---
+
+## Public API
+
+For third-party plugin integration and API reference, see [docs/API.md](./docs/API.md).

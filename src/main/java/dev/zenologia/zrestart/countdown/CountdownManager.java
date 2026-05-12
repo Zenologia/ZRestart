@@ -1,25 +1,37 @@
 package dev.zenologia.zrestart.countdown;
 
 import dev.zenologia.zrestart.ZRestartPlugin;
-import dev.zenologia.zrestart.restart.RestartExecutor;
+import dev.zenologia.zrestart.internal.RestartEventPublisher;
 import dev.zenologia.zrestart.schedule.NextRestart;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.bukkit.Bukkit;
 import org.bukkit.scheduler.BukkitTask;
 
 public final class CountdownManager {
     private final ZRestartPlugin plugin;
     private final WarningDispatcher warningDispatcher;
-    private final RestartExecutor restartExecutor;
+    private final Function<CountdownState, Boolean> restartExecutor;
+    private final RestartEventPublisher eventPublisher;
+    private final Consumer<CountdownState> executionAbortHandler;
     private BukkitTask task;
     private CountdownState activeState;
 
-    public CountdownManager(ZRestartPlugin plugin, WarningDispatcher warningDispatcher, RestartExecutor restartExecutor) {
+    public CountdownManager(
+        ZRestartPlugin plugin,
+        WarningDispatcher warningDispatcher,
+        Function<CountdownState, Boolean> restartExecutor,
+        RestartEventPublisher eventPublisher,
+        Consumer<CountdownState> executionAbortHandler
+    ) {
         this.plugin = plugin;
         this.warningDispatcher = warningDispatcher;
         this.restartExecutor = restartExecutor;
+        this.eventPublisher = eventPublisher;
+        this.executionAbortHandler = executionAbortHandler;
     }
 
     public void startTicker() {
@@ -48,9 +60,16 @@ public final class CountdownManager {
             nextRestart.entry()
         );
         this.warningDispatcher.clear();
+        this.eventPublisher.countdownStarted(this.activeState);
     }
 
     public void startManual(Duration duration, String reason) {
+        CountdownState replaced = this.activeState;
+        if (replaced != null && !replaced.executing()) {
+            this.warningDispatcher.clear();
+            this.eventPublisher.countdownCancelled(replaced);
+        }
+
         Instant now = Instant.now();
         this.activeState = new CountdownState(
             CountdownType.MANUAL,
@@ -60,6 +79,7 @@ public final class CountdownManager {
             null
         );
         this.warningDispatcher.clear();
+        this.eventPublisher.countdownStarted(this.activeState);
     }
 
     public boolean delay(Duration duration) {
@@ -79,6 +99,7 @@ public final class CountdownManager {
         CountdownState cancelled = this.activeState;
         this.activeState = null;
         this.warningDispatcher.clear();
+        this.eventPublisher.countdownCancelled(cancelled);
         return Optional.of(cancelled);
     }
 
@@ -102,7 +123,7 @@ public final class CountdownManager {
         this.warningDispatcher.clear();
     }
 
-    private void tick() {
+    void tick() {
         CountdownState state = this.activeState;
         if (state == null) {
             return;
@@ -114,7 +135,10 @@ public final class CountdownManager {
             state.markExecuting();
             this.warningDispatcher.clear();
             this.activeState = null;
-            this.restartExecutor.execute(state);
+            boolean restartStarted = Boolean.TRUE.equals(this.restartExecutor.apply(state));
+            if (!restartStarted) {
+                this.executionAbortHandler.accept(state);
+            }
             return;
         }
 

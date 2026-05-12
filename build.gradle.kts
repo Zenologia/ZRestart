@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "dev.zenologia"
-version = "1.3"
+version = "1.4"
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
@@ -26,4 +26,8 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+}
+
+tasks.withType<Javadoc>().configureEach {
+    include("dev/zenologia/zrestart/api/**")
 }

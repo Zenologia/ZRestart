@@ -4,6 +4,7 @@ import dev.zenologia.zrestart.ZRestartPlugin;
 import dev.zenologia.zrestart.config.RestartConfig;
 import dev.zenologia.zrestart.countdown.CountdownState;
 import dev.zenologia.zrestart.display.DisplayPlaceholders;
+import dev.zenologia.zrestart.internal.RestartEventPublisher;
 import dev.zenologia.zrestart.placeholders.PlaceholderContext;
 import dev.zenologia.zrestart.time.TimeFormatter;
 import dev.zenologia.zrestart.util.TextRenderer;
@@ -17,12 +18,19 @@ public final class RestartExecutor {
     private final ZRestartPlugin plugin;
     private final TextRenderer renderer;
     private final TimeFormatter timeFormatter;
+    private final RestartEventPublisher eventPublisher;
     private final AtomicBoolean executing = new AtomicBoolean(false);
 
-    public RestartExecutor(ZRestartPlugin plugin, TextRenderer renderer, TimeFormatter timeFormatter) {
+    public RestartExecutor(
+        ZRestartPlugin plugin,
+        TextRenderer renderer,
+        TimeFormatter timeFormatter,
+        RestartEventPublisher eventPublisher
+    ) {
         this.plugin = plugin;
         this.renderer = renderer;
         this.timeFormatter = timeFormatter;
+        this.eventPublisher = eventPublisher;
     }
 
     public boolean execute(CountdownState state) {
@@ -43,6 +51,7 @@ public final class RestartExecutor {
             return false;
         }
 
+        this.eventPublisher.restartExecuting(state);
         Bukkit.savePlayers();
         for (World world : Bukkit.getWorlds()) {
             world.save();
